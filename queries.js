@@ -33,3 +33,42 @@ db.books.find().sort({ price: -1 })
 // 🔟 Pagination: limit and skip (5 per page)
 db.books.find().limit(5) // page 1
 db.books.find().skip(5).limit(5) // page 2
+
+// Average price of books by genre
+db.books.aggregate([
+  { $group: { _id: "$genre", avgPrice: { $avg: "$price" } } }
+])
+
+// Author with the most books
+db.books.aggregate([
+  { $group: { _id: "$author", totalBooks: { $sum: 1 } } },
+  { $sort: { totalBooks: -1 } },
+  { $limit: 1 }
+])
+
+// Group books by publication decade
+db.books.aggregate([
+  {
+    $group: {
+      _id: { $floor: { $divide: ["$published_year", 10] } },
+      count: { $sum: 1 }
+    }
+  },
+  {
+    $project: {
+      decade: { $concat: [{ $toString: { $multiply: ["$_id", 10] } }, "s"] },
+      count: 1,
+      _id: 0
+    }
+  }
+])
+
+// Create index on title
+db.books.createIndex({ title: 1 })
+
+// Create compound index on author and published_year
+db.books.createIndex({ author: 1, published_year: -1 })
+
+// Use explain() to show query performance
+db.books.find({ title: "The Hobbit" }).explain("executionStats")
+
